@@ -4,7 +4,10 @@ data_split_4000/
 data_split_full/
 
 # ── Trained model weights ───────────────────────────────────────────────────
-saved_model/
+# Only the production model is tracked. Experimental models are excluded.
+saved_model/blood_cell_model_4000.keras
+saved_model/blood_cell_model_95_*
+saved_model/blood_cell_model_v2_*
 
 # ── Python ──────────────────────────────────────────────────────────────────
 __pycache__/
