@@ -1,6 +1,5 @@
 # Technical Summary — EventDP Blood Cell Classifier
 
-*Presentation reference card · ~5–10 minutes*
 
 ---
 
