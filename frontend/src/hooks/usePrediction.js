@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const API_URL = 'http://localhost:8000/predict';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/predict';
 
 /**
  * usePrediction — encapsulates all state and logic for the Prediction page.
@@ -57,11 +57,17 @@ export default function usePrediction() {
         const formData = new FormData();
         formData.append('file', file);
 
+        // Abort controller — 60 s timeout to handle cold-start wake-up
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
+
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
                 body: formData,
+                signal: controller.signal,
             });
+            clearTimeout(timeoutId);
 
             if (response.ok) {
                 const json = await response.json();
@@ -70,7 +76,6 @@ export default function usePrediction() {
                     confidence: json.confidence,
                 });
             } else {
-                // Try to extract the API's error message, fall back to generic
                 let message = 'Prediction failed. Please try again.';
                 try {
                     const errJson = await response.json();
@@ -80,8 +85,15 @@ export default function usePrediction() {
                 }
                 setError(message);
             }
-        } catch {
-            setError('Could not reach the server. Is the backend running?');
+        } catch (err) {
+            clearTimeout(timeoutId);
+            if (err.name === 'AbortError') {
+                setError(
+                    'The server is waking up — this can take up to 60 seconds on first use. Please try again in a moment.'
+                );
+            } else {
+                setError('Could not reach the server. Is the backend running?');
+            }
         } finally {
             setIsLoading(false);
         }
