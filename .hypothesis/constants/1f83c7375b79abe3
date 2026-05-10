@@ -1,0 +1,4 @@
+# file: C:\Users\paule\Desktop\Machine Learning\bloodcell_detection\classify.py
+# hypothesis_version: 6.131.15
+
+[255.0, 100, 150, 'Confidence: {:.2f}%', 'Enter image path: ', 'Eosinophil', 'Lymphocyte', 'Monocyte', 'Neutrophil', 'Predicted class:', '__main__']

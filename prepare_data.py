@@ -1,7 +1,13 @@
 """
 Laboratory 2 - Data Preparation
-Default: 4000 images (1000 per class), 70% train / 15% val / 15% test.
-Full dataset: run with --full to use all images from TRAIN (70% train, 30% val) and TEST (100% test).
+
+Avoids train/val leakage from the same source folder (e.g. pre-augmented duplicates in TRAIN):
+
+- TRAIN: 100% of images from the original TRAIN source (no images from TRAIN go to VAL).
+- VAL + TEST: 50/50 split of images from the original TEST source (per class, seed 42).
+
+Subset (default): 4000 images — 700 train per class from TRAIN; 150 val + 150 test per class from TEST.
+Full (--full): all TRAIN → TRAIN; half of each class's TEST → VAL, half → TEST.
 """
 
 import argparse
@@ -16,7 +22,8 @@ random.seed(RANDOM_SEED)
 # Paths (project root = folder containing this script)
 PROJECT_ROOT = Path(__file__).resolve().parent
 ORIGINAL = PROJECT_ROOT / "data_raw" / "dataset2-master" / "dataset2-master" / "images"
-DEST = PROJECT_ROOT / "data_split"
+# DEST set in main: data_split_4000 (subset) or data_split_full (full dataset)
+DEST = PROJECT_ROOT / "data_split_4000"
 
 # Class names: source folders are UPPERCASE, destination use Title Case
 CLASS_MAP = {
@@ -26,7 +33,7 @@ CLASS_MAP = {
     "NEUTROPHIL": "Neutrophil",
 }
 
-# Subset (4000 images): per-class split 700 train, 150 val, 150 test
+# Subset (4000 images): 700/class from TRAIN; 150 val + 150 test/class from TEST (50/50 of 300 drawn from TEST)
 SPLIT_PER_CLASS_SUBSET = {
     "EOSINOPHIL": (700, 150, 150),
     "LYMPHOCYTE": (700, 150, 150),
@@ -50,8 +57,8 @@ def ensure_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
 
-def prepare_subset() -> None:
-    """Prepare 4000-image subset (1000 per class, 70/15/15)."""
+def prepare_subset(dest: Path) -> None:
+    """Prepare 4000-image subset: train from TRAIN only; val/test from TEST only (50/50 of TEST draw)."""
     if not TRAIN_SRC.exists():
         raise FileNotFoundError(f"TRAIN folder not found: {TRAIN_SRC}")
     if not TEST_SRC.exists():
@@ -59,7 +66,7 @@ def prepare_subset() -> None:
 
     for split in ("TRAIN", "VAL", "TEST"):
         for dest_class in CLASS_MAP.values():
-            d = DEST / split / dest_class
+            d = dest / split / dest_class
             if d.exists():
                 for f in d.iterdir():
                     if f.is_file():
@@ -73,36 +80,38 @@ def prepare_subset() -> None:
         train_images = list_images(train_src_dir)
         test_images = list_images(test_src_dir)
 
-        if len(train_images) < n_train + n_val:
-            raise RuntimeError(f"Class {src_name}: TRAIN has {len(train_images)} images, need {n_train + n_val}")
-        if len(test_images) < n_test:
-            raise RuntimeError(f"Class {src_name}: TEST has {len(test_images)} images, need {n_test}")
+        if len(train_images) < n_train:
+            raise RuntimeError(f"Class {src_name}: TRAIN has {len(train_images)} images, need {n_train}")
+        if len(test_images) < n_val + n_test:
+            raise RuntimeError(
+                f"Class {src_name}: TEST has {len(test_images)} images, need {n_val + n_test} for val+test"
+            )
 
         random.shuffle(train_images)
         random.shuffle(test_images)
         train_selected = train_images[:n_train]
-        val_selected = train_images[n_train : n_train + n_val]
-        test_selected = test_images[:n_test]
+        val_selected = test_images[:n_val]
+        test_selected = test_images[n_val : n_val + n_test]
 
-        ensure_dir(DEST / "TRAIN" / dest_name)
-        ensure_dir(DEST / "VAL" / dest_name)
-        ensure_dir(DEST / "TEST" / dest_name)
+        ensure_dir(dest / "TRAIN" / dest_name)
+        ensure_dir(dest / "VAL" / dest_name)
+        ensure_dir(dest / "TEST" / dest_name)
         for path in train_selected:
-            shutil.copy2(path, DEST / "TRAIN" / dest_name / path.name)
+            shutil.copy2(path, dest / "TRAIN" / dest_name / path.name)
             total_copied += 1
         for path in val_selected:
-            shutil.copy2(path, DEST / "VAL" / dest_name / path.name)
+            shutil.copy2(path, dest / "VAL" / dest_name / path.name)
             total_copied += 1
         for path in test_selected:
-            shutil.copy2(path, DEST / "TEST" / dest_name / path.name)
+            shutil.copy2(path, dest / "TEST" / dest_name / path.name)
             total_copied += 1
         print(f"  {dest_name}: train={len(train_selected)}, val={len(val_selected)}, test={len(test_selected)}")
 
     print(f"\nDone. Total images copied: {total_copied} (expected 4000).")
 
 
-def prepare_full() -> None:
-    """Use full dataset: 70% of TRAIN → train, 30% of TRAIN → val, 100% of TEST → test."""
+def prepare_full(dest: Path) -> None:
+    """Full dataset: all TRAIN → train; original TEST split 50/50 → val and test (per class)."""
     if not TRAIN_SRC.exists():
         raise FileNotFoundError(f"TRAIN folder not found: {TRAIN_SRC}")
     if not TEST_SRC.exists():
@@ -110,7 +119,7 @@ def prepare_full() -> None:
 
     for split in ("TRAIN", "VAL", "TEST"):
         for dest_class in CLASS_MAP.values():
-            d = DEST / split / dest_class
+            d = dest / split / dest_class
             if d.exists():
                 for f in d.iterdir():
                     if f.is_file():
@@ -124,40 +133,48 @@ def prepare_full() -> None:
         test_images = list_images(test_src_dir)
 
         random.shuffle(train_images)
-        n_train = int(0.70 * len(train_images))
-        n_val = len(train_images) - n_train
-        train_selected = train_images[:n_train]
-        val_selected = train_images[n_train:]
-        test_selected = test_images  # use all
+        random.shuffle(test_images)
+        train_selected = train_images
+        mid = len(test_images) // 2
+        val_selected = test_images[:mid]
+        test_selected = test_images[mid:]
 
-        ensure_dir(DEST / "TRAIN" / dest_name)
-        ensure_dir(DEST / "VAL" / dest_name)
-        ensure_dir(DEST / "TEST" / dest_name)
+        ensure_dir(dest / "TRAIN" / dest_name)
+        ensure_dir(dest / "VAL" / dest_name)
+        ensure_dir(dest / "TEST" / dest_name)
         for path in train_selected:
-            shutil.copy2(path, DEST / "TRAIN" / dest_name / path.name)
+            shutil.copy2(path, dest / "TRAIN" / dest_name / path.name)
             total_copied += 1
         for path in val_selected:
-            shutil.copy2(path, DEST / "VAL" / dest_name / path.name)
+            shutil.copy2(path, dest / "VAL" / dest_name / path.name)
             total_copied += 1
         for path in test_selected:
-            shutil.copy2(path, DEST / "TEST" / dest_name / path.name)
+            shutil.copy2(path, dest / "TEST" / dest_name / path.name)
             total_copied += 1
         print(f"  {dest_name}: train={len(train_selected)}, val={len(val_selected)}, test={len(test_selected)}")
 
-    print(f"\nDone. Total images copied: {total_copied} (full dataset, ~12.5k).")
+    print(f"\nDone. Total images copied: {total_copied} (full dataset: all TRAIN + all TEST split 50/50 val/test).")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Prepare data_split from data_raw.")
-    parser.add_argument("--full", action="store_true", help="Use full dataset (~12.5k) instead of 4000 subset")
+    parser = argparse.ArgumentParser(
+        description="Prepare train/val/test: TRAIN from original TRAIN only; VAL+TEST from original TEST (50/50)."
+    )
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        help="Full dataset → data_split_full; else 4000 subset → data_split_4000",
+    )
     args = parser.parse_args()
+
+    dest = PROJECT_ROOT / ("data_split_full" if args.full else "data_split_4000")
 
     print("Data preparation - Laboratory 2")
     print(f"Source: {ORIGINAL}")
-    print(f"Destination: {DEST}")
+    print(f"Destination: {dest}")
     print("Mode: FULL dataset" if args.full else "Mode: 4000 subset")
     print()
     if args.full:
-        prepare_full()
+        prepare_full(dest)
     else:
-        prepare_subset()
+        prepare_subset(dest)

@@ -1,11 +1,12 @@
-# Data (large; get dataset separately)
-data_raw/
+# ── Dataset splits (large; not tracked) ────────────────────────────────────
 data_split/
+data_split_4000/
+data_split_full/
 
-# Saved model weights
+# ── Trained model weights ───────────────────────────────────────────────────
 saved_model/
 
-# Python
+# ── Python ──────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
@@ -13,13 +14,25 @@ __pycache__/
 .venv/
 venv/
 env/
+.env
+*.env
 
-# Keras / TensorFlow
+# ── Keras / TensorFlow ──────────────────────────────────────────────────────
 .keras/
 
-# OS / IDE
+# ── Node / Frontend ─────────────────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# ── OS / IDE ────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 *.swp
 .idea/
 .vscode/
+
+# ── Misc ────────────────────────────────────────────────────────────────────
+*.log
+*.tmp

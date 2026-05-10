@@ -1,0 +1,16 @@
+# FastAPI deployment dependencies
+# Install with: pip install -r requirements-api.txt
+
+# Web framework and server
+fastapi==0.136.1
+uvicorn[standard]==0.42.0
+python-multipart==0.0.20
+
+# ML / image processing (already in requirements.txt, pinned here for the API environment)
+tensorflow==2.18.0
+pillow==10.4.0
+
+# Testing
+httpx==0.28.1
+pytest==8.3.5
+hypothesis==6.131.15

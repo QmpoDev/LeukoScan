@@ -1,0 +1,22 @@
+Ensemble classification report (test set)
+=========================================
+
+Models: ['blood_cell_model_95_full_run1.keras', 'blood_cell_model_95_full_run2.keras', 'blood_cell_model_95_full_run3.keras']
+TTA: 4
+
+Total images: 1244
+Correct: 1073
+Test accuracy: 0.8625 (86.25%)
+
+Per-class accuracy (on test set):
+  Eosinophil: 77.88% (243/312)
+  Lymphocyte: 100.00% (310/310)
+  Monocyte: 74.84% (232/310)
+  Neutrophil: 92.31% (288/312)
+
+Confusion matrix (rows=true, cols=predicted):
+  Eosinophil, Lymphocyte, Monocyte, Neutrophil
+  Eosinophil: 243, 0, 0, 69
+  Lymphocyte: 0, 310, 0, 0
+  Monocyte: 0, 0, 232, 78
+  Neutrophil: 24, 0, 0, 288

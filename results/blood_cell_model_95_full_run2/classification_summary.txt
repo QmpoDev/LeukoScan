@@ -1,0 +1,19 @@
+Classification report (test set)
+================================
+
+Total images: 1244
+Correct: 1061
+Test accuracy: 0.8529 (85.29%)
+
+Per-class accuracy (on test set):
+  Eosinophil: 77.24% (241/312)
+  Lymphocyte: 100.00% (310/310)
+  Monocyte: 72.90% (226/310)
+  Neutrophil: 91.03% (284/312)
+
+Confusion matrix (rows=true, cols=predicted):
+  Eosinophil, Lymphocyte, Monocyte, Neutrophil
+  Eosinophil: 241, 0, 0, 71
+  Lymphocyte: 0, 310, 0, 0
+  Monocyte: 4, 0, 226, 80
+  Neutrophil: 28, 0, 0, 284

@@ -1,0 +1,4 @@
+# file: C:\Users\paule\Desktop\Machine Learning\bloodcell_detection\ml-server.py
+# hypothesis_version: 6.131.15
+
+[200, 400, 404, 500, 8000, '.jpg', '.png', '/health', '/predict', '0.0.0.0', '1.0.0', 'Liveness check', '__main__', 'confidence', 'description', 'error', 'image/jpeg', 'image/png', 'ml-server:app', 'model', 'ok', 'predicted_class', 'saved_model']
