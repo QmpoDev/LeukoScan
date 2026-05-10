@@ -85,7 +85,7 @@ Confidence:   91%
 
 ---
 
-## 5. System Architecture (30-second version)
+## 5. System Architecture
 
 ```
 Browser (React :5173)
